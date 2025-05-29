@@ -1,0 +1,26 @@
+{
+    "salon1": {
+        "mesa1": {
+            "jurados": [
+                {
+                    "nombre": "julito",
+                    "cedula": "12345678",
+                    "telefono": "654321",
+                    "direccion": "7y7g7ff7"
+                }
+            ]
+        }
+    },
+    "salon2": {
+        "mesa1": {
+            "jurados": [
+                {
+                    "nombre": "salo",
+                    "cedula": "12345678",
+                    "telefono": "654321",
+                    "direccion": "7t7ynu"
+                }
+            ]
+        }
+    }
+}
