@@ -1,6 +1,7 @@
 import tkinter as t
 from tkinter import messagebox, simpledialog
 import json
+import csv
 
 # esta parte sirve para guardar los datos de los salones, mesas y jurados
 estructura = {}
@@ -82,6 +83,75 @@ def cargarEstructura():
         messagebox.showinfo("cargado", "el archivo fue cargado exitosamente")
     except FileNotFoundError:
         messagebox.showerror("error", "archivo no encontrado")
+def cargarvotantescsv():
+    try:
+        with open("votantes.csv", newline="", encoding="utf-8") as archivo:
+            lector = csv.DictReader(archivo)
+            for fila in lector:
+                nombre = fila["nombre"]
+                cedula = fila["cedula"]
+                salon = fila ["salon"]
+                mesa = fila ["mesa"]
+                
+                if salon not in estructura:
+                    messagebox.showerror("error",f"el salon {salon} no existe")
+                    continue
+                if mesa not in estructura[salon]:
+                    messagebox.showerror("error",f"la mesa {mesa} no existe en {salon}")
+                    continue
+                if "votantes" not in estructura[salon][mesa]:
+                    estructura[salon][mesa]["votantes"]= []
+                existentes= [v["cedula"]for v in estructura[salon][mesa]["votantes"]]    
+                if cedula in existentes:
+                    continue
+                estructura[salon][mesa]["votantes"].append({"nombre":nombre, "cedula":cedula})
+                messagebox.showinfo("exito","el votante fue cargado con exito")
+    except FileNotFoundError:
+        messagebox.showerror("error","el archivo de votantes.csv no se encontro")
+
+def rigistrarAsistencia():
+    cedula=simpledialog.askstring("asistencia","ingresa la cedula del votante:")
+    salon=simpledialog.askstring("asistencia","ingresa el salon:")
+    mesa=simpledialog.askstring("asistencia","ingresa la mesa:")
+    hora=simpledialog.askstring("asistencia","ingresa la hora (hh:mm):")
+
+    if not all ([cedula, salon, mesa, hora]):
+        messagebox.showerror("error","todos los campos se deben de llenar")
+        return
+    
+    if salon not in estructura or mesa not in estructura[salon]:
+        messagebox.showerror("error","el salon o la mesa no existe")
+        return
+    
+    try:
+        Hdivipor=hora.split(":")
+        hora=int(Hdivipor[0])
+        if hora>=16:
+            messagebox.showerror("error","la hora no puede ser despues de las 4:00 pm ")
+            return
+        
+    except:
+        messagebox.showerror("error","formato de hora incorrecto(usa hh:mm)")
+        return
+    
+    mesaInfo=estructura[salon][mesa]
+    votantes=mesaInfo.get("votantes",[])
+    if cedula not in [v["cedula"]for v in votantes]:
+        messagebox.showerror("error","no hay cedula registrada en esa mesa")
+        return
+    
+    if "asistencias" not in mesaInfo:
+        mesaInfo["asistencias"]=[]
+
+    siAsistio=any(a["cedula"]==cedula for a in mesaInfo["asistencias"])
+    if siAsistio:
+        messagebox.showinfo("informacion","el votante ya registro su asistencia")
+        return
+    mesaInfo["asistencia"].append({"cedula":cedula,"hora":hora})
+    messagebox.showinfo("exito", "asistencia registrada correctamente")
+
+
+
 
 ventana = t.Tk()  # crea la ventana principal
 ventana.title("centro de votacion")
@@ -106,6 +176,12 @@ boton_guardar.pack()
 
 boton_cargar = t.Button(ventana, text="cargar estructura", command=cargarEstructura)
 boton_cargar.pack()
+
+boton_cargar_votantes=t.Button(ventana, text="cargar votantes", command=cargarvotantescsv)
+boton_cargar_votantes.pack()
+
+botonAsistencia=t.Button(ventana, text="registrar asistencia", command=rigistrarAsistencia)
+botonAsistencia.pack()
 
 frame_estructura = t.Frame(ventana)
 frame_estructura.pack(pady=10)  # crea un frame o marco en el que se colocan los botones de los salones, mesas y jurados
