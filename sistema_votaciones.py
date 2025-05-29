@@ -2,7 +2,7 @@ import tkinter as t
 from tkinter import messagebox, simpledialog
 import json
 import csv
-
+import pandas as p
 # esta parte sirve para guardar los datos de los salones, mesas y jurados
 estructura = {}
 
@@ -150,6 +150,44 @@ def rigistrarAsistencia():
     mesaInfo["asistencia"].append({"cedula":cedula,"hora":hora})
     messagebox.showinfo("exito", "asistencia registrada correctamente")
 
+#esta funcion utiliza pandas para crear un resumen estadistico
+def resumenEstadistico():
+    try:
+        resumen=[]
+
+        for salon,mesas in estructura.items():
+            jurados_total=0
+            votantes_total=0
+            asistencias_total=0
+            mesas_completas=0
+            mesas_totales= len(mesas)
+
+            for mesa_nombre, mesa_info in mesas.items():
+                jurados = mesa_info.get("jurados",[])
+                votantes = mesa_info.get("votantes",[])
+                asistencias = mesa_info.get("asistencias",[])
+
+                jurados_total += len(jurados)
+                votantes_total += len(votantes)
+                asistencias_total += len(asistencias) if asistencias else 0
+
+                if len(jurados) >=1:
+                    mesas_completas +=1
+
+            porcentaje_completas = (mesas_completas / mesas_totales) * 100 if mesas_totales else 0
+
+            resumen.append({
+                "Salón": salon,
+                "Jurados totales": jurados_total,
+                "Votantes totales": votantes_total,
+                "Votantes con asistencia": asistencias_total,
+                "Porcentaje mesas completas": round(porcentaje_completas, 2)})
+
+        df = p.DataFrame(resumen)
+        messagebox.showinfo("Resumen Estadístico", df.to_string(index=False))
+
+    except Exception as e:
+        messagebox.showerror("Error", f"No se pudo generar el resumen:\n{e}")
 
 
 
@@ -182,6 +220,9 @@ boton_cargar_votantes.pack()
 
 botonAsistencia=t.Button(ventana, text="registrar asistencia", command=rigistrarAsistencia)
 botonAsistencia.pack()
+
+botondelresumenestadistico=t.Button(ventana, text="resumen estadistico", command=resumenEstadistico)
+botondelresumenestadistico.pack()
 
 frame_estructura = t.Frame(ventana)
 frame_estructura.pack(pady=10)  # crea un frame o marco en el que se colocan los botones de los salones, mesas y jurados
