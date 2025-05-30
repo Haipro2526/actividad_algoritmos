@@ -3,6 +3,7 @@ from tkinter import messagebox, simpledialog
 import json
 import csv
 import pandas as p
+import matplotlib.pyplot as plt
 # esta parte sirve para guardar los datos de los salones, mesas y jurados
 estructura = {}
 
@@ -78,11 +79,12 @@ def guardarEstructura():
 def cargarEstructura():
     global estructura
     try:
-        with open("estructura.json", "r", encoding="utf-8") as folder:
+        with open("estructura.json", "r", encoding="utf-8") as folder: #carga el archivo json y si este no existe manda un error
             estructura = json.load(folder)
         messagebox.showinfo("cargado", "el archivo fue cargado exitosamente")
     except FileNotFoundError:
         messagebox.showerror("error", "archivo no encontrado")
+
 def cargarvotantescsv():
     try:
         with open("votantes.csv", newline="", encoding="utf-8") as archivo:
@@ -189,7 +191,60 @@ def resumenEstadistico():
     except Exception as e:
         messagebox.showerror("Error", f"No se pudo generar el resumen:\n{e}")
 
+def generarGraficos():
+    salones=[]
+    jurados=[]
+    votantes=[]
+    asistencias=[]
 
+    mesas_totales=0
+    mesas_completas=0
+    total_votantes=0
+    total_asistencias=0
+
+    for salon, mesas in estructura.items():
+        salones.append(salon)
+        jurados_salon=0
+        votantes_salon=0
+        asistencias_salon=0
+
+        for mesa_info in mesas.values():
+            jurados_salon += len(mesa_info.get("jurados",[]))
+            votantes_salon += len(mesa_info.get("votantes", []))
+            asistencias_salon += len(mesa_info.get("asistencias", [])) if "asistencias" in mesa_info else 0
+            
+            total_votantes += votantes_salon
+            total_asistencias += asistencias_salon
+            mesas_totales += 1
+            if len (mesa_info.get("jurados",[]))>0:
+                mesas_completas +=1
+        
+        jurados.append(jurados_salon)
+        votantes.append(votantes_salon)
+        asistencias.append(asistencias_salon)
+#esta parte crea el grafico de barras 
+    x=range(len(salones))#crea una secuensia de numeros hasta a cantidad de salones que el ususario puso
+    plt.figure(figsize=(10,5))#da los parametros del grafico x,y osea controla el tamaño
+    plt.bar(x, jurados, width=0.2, label='Jurados', align='center')#crea una barra le da su grosor una etiqueta y lo centra sobre el numero de x
+    plt.bar([i + 0.2 for i in x], votantes, width=0.2, label='Votantes', align='center')#esta realiza un desplazamiento a la derecha
+    plt.bar([i + 0.4 for i in x], asistencias, width=0.2, label='Asistencias', align='center')#crea una barra por grupo para la asistencia mas a la derecha
+    plt.xticks([i + 0.2 for i in x], salones)#remplasa el numero de x poe los nombres de los salones y se alinea con el grupo de barras
+    plt.title("jurados votantes y asistencias por salón")#este es el titulo de la tabla
+    plt.legend()#ayuda a identificar los diferentes elementos de la linea
+    plt.tight_layout()#ajusta todo automaticamente para que no se corte ni el texto ni las barras
+    plt.show()#muestra el grafico
+#esta parte hace una coparacion entre las mesas que estan completas y las que estan incompletas creando un grafico de pastel
+    incompletas = mesas_totales - mesas_completas#calcula la cantidad de mesas incompletas que hay
+    plt.figure()#crea un nuevo grafico independiente
+    plt.pie([mesas_completas, incompletas], labels=["Completas", "Incompletas"], autopct='%1.1f%%')#dibuja el diagrama mostrando las eiquetas con los labels y el porsentaje gracias a el autopct='%1.1f%%'
+    plt.title("Mesas con jurados completos vs incompletos")#titulo de la grafica
+    plt.show()#muestra el grafico
+
+    no_asistieron = total_votantes - total_asistencias#calcula los votantes que no hacistieron
+    plt.figure()#nuevo diagrama independiente
+    plt.pie([total_asistencias, no_asistieron], labels=["Asistieron", "No asistieron"], autopct='%1.1f%%')#dibuja el diagrama igual que en anterior los que cambia es que este es con los que asistieron 
+    plt.title("Asistencia de votantes")#el titulo del diagrama
+    plt.show()#muestra el diagrama
 
 ventana = t.Tk()  # crea la ventana principal
 ventana.title("centro de votacion")
@@ -197,11 +252,9 @@ ventana.title("centro de votacion")
 t.Label(ventana, text="numero de salones:").pack()
 entry_salones = t.Entry(ventana)
 entry_salones.pack()
-
 t.Label(ventana, text="mesas por salon:").pack()
 entry_mesas = t.Entry(ventana)  # agrega etiquetas y campos para que el usuario ingrese salones, mesas y jurados
 entry_mesas.pack()
-
 t.Label(ventana, text="jurados por mesa:").pack()
 entry_jurados = t.Entry(ventana)
 entry_jurados.pack()
@@ -210,10 +263,10 @@ crearboton = t.Button(ventana, text="generar", command=CrearEstructura)
 crearboton.pack(pady=10)  # crea un boton que cuando se presiona crea la estructura
 
 boton_guardar = t.Button(ventana, text="guardar estructura", command=guardarEstructura)
-boton_guardar.pack()
+boton_guardar.pack() #guarda la estructura mediante un archivo json
 
 boton_cargar = t.Button(ventana, text="cargar estructura", command=cargarEstructura)
-boton_cargar.pack()
+boton_cargar.pack() #carga el archivo y si no existe manda un error
 
 boton_cargar_votantes=t.Button(ventana, text="cargar votantes", command=cargarvotantescsv)
 boton_cargar_votantes.pack()
@@ -223,6 +276,9 @@ botonAsistencia.pack()
 
 botondelresumenestadistico=t.Button(ventana, text="resumen estadistico", command=resumenEstadistico)
 botondelresumenestadistico.pack()
+
+botonGraficos=t.Button(ventana, text="generar graficos", command=generarGraficos)
+botonGraficos.pack()
 
 frame_estructura = t.Frame(ventana)
 frame_estructura.pack(pady=10)  # crea un frame o marco en el que se colocan los botones de los salones, mesas y jurados
