@@ -87,34 +87,34 @@ def cargarEstructura():
 
 def cargarvotantescsv():
     try:
-        with open("votantes.csv", newline="", encoding="utf-8") as archivo:
+        with open("votantes.csv", newline="", encoding="utf-8") as archivo: # abre el archivo vontantes.csv en el que se verifican los saltos de lineas y los caracteres especiales como tildes u otro simbolos
             lector = csv.DictReader(archivo)
-            for fila in lector:
+            for fila in lector: # lee las filas segun en donde se encuetre 
                 nombre = fila["nombre"]
                 cedula = fila["cedula"]
                 salon = fila ["salon"]
                 mesa = fila ["mesa"]
                 
                 if salon not in estructura:
-                    messagebox.showerror("error",f"el salon {salon} no existe")
+                    messagebox.showerror("error",f"el salon {salon} no existe") #verifica si el salon no existe y mestra un error para luego continuar la revision
                     continue
                 if mesa not in estructura[salon]:
-                    messagebox.showerror("error",f"la mesa {mesa} no existe en {salon}")
+                    messagebox.showerror("error",f"la mesa {mesa} no existe en {salon}") #verifica si la mesa no existe en el salon
                     continue
                 if "votantes" not in estructura[salon][mesa]:
-                    estructura[salon][mesa]["votantes"]= []
-                existentes= [v["cedula"]for v in estructura[salon][mesa]["votantes"]]    
-                if cedula in existentes:
-                    continue
-                estructura[salon][mesa]["votantes"].append({"nombre":nombre, "cedula":cedula})
-                messagebox.showinfo("exito","el votante fue cargado con exito")
-    except FileNotFoundError:
+                    estructura[salon][mesa]["votantes"]= [] # verifica si el votante no esta en el diccionario salon y mesa ya que gracias a la llave votante
+                existentes= [v["cedula"]for v in estructura[salon][mesa]["votantes"]]# extras todas las cedulas y las guarda en un diccionario llamdo existentes    
+                if cedula in existentes: #se salta la fila si la cedula ya esta en la lista de existentes esta se salta la fila y no la vuelve a registrar
+                    continue # salta al siguiente ciclo
+                estructura[salon][mesa]["votantes"].append({"nombre":nombre, "cedula":cedula}) #agrega un nuevo votante a la lista con nombre y cedula 
+                messagebox.showinfo("exito","el votante fue cargado con exito")# abre un venta emergente que contiene un mensaje
+    except FileNotFoundError:#si no se encuentra el archivo se activa el parametro except y abre una ventana emergente que muestra el error
         messagebox.showerror("error","el archivo de votantes.csv no se encontro")
-
+# esta funcion sirve para verificar si el votsante asistio o no
 def rigistrarAsistencia():
     cedula=simpledialog.askstring("asistencia","ingresa la cedula del votante:")
     salon=simpledialog.askstring("asistencia","ingresa el salon:")
-    mesa=simpledialog.askstring("asistencia","ingresa la mesa:")
+    mesa=simpledialog.askstring("asistencia","ingresa la mesa:")# se muestra una ventana en lo que hay que escribir lo que te pide y se guarda lo que escribiste en cada variante
     hora=simpledialog.askstring("asistencia","ingresa la hora (hh:mm):")
 
     if not all ([cedula, salon, mesa, hora]):
@@ -124,7 +124,7 @@ def rigistrarAsistencia():
     if salon not in estructura or mesa not in estructura[salon]:
         messagebox.showerror("error","el salon o la mesa no existe")
         return
-    
+#estos datos que se ponen en esta funcion deben concordar con los datos del archivo votantes.csv    
     try:
         Hdivipor=hora.split(":")
         hora=int(Hdivipor[0])
@@ -146,32 +146,32 @@ def rigistrarAsistencia():
         mesaInfo["asistencias"]=[]
 
     siAsistio=any(a["cedula"]==cedula for a in mesaInfo["asistencias"])
-    if siAsistio:
+    if siAsistio:#recorre la lista que contiene los votantes que se registraron y any devuelve true si almenos una vez se cumple la condicion
         messagebox.showinfo("informacion","el votante ya registro su asistencia")
         return
-    mesaInfo["asistencia"].append({"cedula":cedula,"hora":hora})
+    mesaInfo["asistencias"].append({"cedula":cedula,"hora":hora})
     messagebox.showinfo("exito", "asistencia registrada correctamente")
 
 #esta funcion utiliza pandas para crear un resumen estadistico
 def resumenEstadistico():
     try:
-        resumen=[]
+        resumen=[]# se crea una lista vacia
 
-        for salon,mesas in estructura.items():
+        for salon,mesas in estructura.items():# recorre los dastos de cada salon y sus mesas dentro del direcctorio 
             jurados_total=0
-            votantes_total=0
+            votantes_total=0#llevan los  datos de  cada unos los votantes jurados los que asistieron y las mesas que estan completas
             asistencias_total=0
             mesas_completas=0
-            mesas_totales= len(mesas)
+            mesas_totales= len(mesas)# ceunta cuantas mesas tiene el salon
 
-            for mesa_nombre, mesa_info in mesas.items():
+            for mesa_nombre, mesa_info in mesas.items():#obtiene el nombre de la mesa y toda su informacion
                 jurados = mesa_info.get("jurados",[])
-                votantes = mesa_info.get("votantes",[])
+                votantes = mesa_info.get("votantes",[])#abotiene la lista de cada uno y si no hay nada pone que la lista esta vacia
                 asistencias = mesa_info.get("asistencias",[])
 
-                jurados_total += len(jurados)
-                votantes_total += len(votantes)
-                asistencias_total += len(asistencias) if asistencias else 0
+                jurados_total += len(jurados)#suma la cantidad de jurados en la mesa al total de jurados en el salon
+                votantes_total += len(votantes)#suma los votantes de cada mesa al total de votantes en el salon
+                asistencias_total += len(asistencias) if asistencias else 0 # suma las asistencias y si no hay da 0
 
                 if len(jurados) >=1:
                     mesas_completas +=1
@@ -181,46 +181,46 @@ def resumenEstadistico():
             resumen.append({
                 "Salón": salon,
                 "Jurados totales": jurados_total,
-                "Votantes totales": votantes_total,
+                "Votantes totales": votantes_total,#crea un diccionario en donde guarda los datos de cada variable consu respectiva llave 
                 "Votantes con asistencia": asistencias_total,
-                "Porcentaje mesas completas": round(porcentaje_completas, 2)})
+                "Porcentaje mesas completas": round(porcentaje_completas, 2)})#esn esta tambien guarda los datos y añade la funcion de redondear a 2 decimales
 
-        df = p.DataFrame(resumen)
-        messagebox.showinfo("Resumen Estadístico", df.to_string(index=False))
+        Tbr = p.DataFrame(resumen) #comvierte la lista resumen en una tabla usando pandas
+        messagebox.showinfo("Resumen Estadístico", Tbr.to_string(index=False))#muestra la tabla en una ventana emergente sin mostrar los indices
 
-    except Exception as e:
+    except Exception as e:# muestra una ventana con el error del problema
         messagebox.showerror("Error", f"No se pudo generar el resumen:\n{e}")
 
 def generarGraficos():
     salones=[]
-    jurados=[]
+    jurados=[]#estos son listas vacias para guardar el conteo de cada variable
     votantes=[]
     asistencias=[]
 
     mesas_totales=0
-    mesas_completas=0
+    mesas_completas=0#estos son contadores para los valores 
     total_votantes=0
     total_asistencias=0
 
     for salon, mesas in estructura.items():
-        salones.append(salon)
+        salones.append(salon)#recorre cada salon y mesa en estructurra y añade el nombre del salon a la lista salones
         jurados_salon=0
-        votantes_salon=0
+        votantes_salon=0#estos son contadores para los votantes los jurados y los asistentes
         asistencias_salon=0
 
         for mesa_info in mesas.values():
-            jurados_salon += len(mesa_info.get("jurados",[]))
-            votantes_salon += len(mesa_info.get("votantes", []))
-            asistencias_salon += len(mesa_info.get("asistencias", [])) if "asistencias" in mesa_info else 0
+            jurados_salon += len(mesa_info.get("jurados",[]))#cuenta cuantos jurados hay y si no hay ninguno lo deja vacio
+            votantes_salon += len(mesa_info.get("votantes", []))#este es igual pero con los votantes
+            asistencias_salon += len(mesa_info.get("asistencias", [])) if "asistencias" in mesa_info else 0 # este es lo mismo solo que si no hay asistencia da como resultado 0
             
-            total_votantes += votantes_salon
-            total_asistencias += asistencias_salon
-            mesas_totales += 1
-            if len (mesa_info.get("jurados",[]))>0:
+            total_votantes += votantes_salon# va sumando los votantes de los salones para el resultado en total 
+            total_asistencias += asistencias_salon#lo mismo pero con las asistencias
+            mesas_totales += 1#por cada mesa que alla se suma una al contador
+            if len (mesa_info.get("jurados",[]))>0:#usa la llave jurados para verificar si estan todos los jurados si la condicion se cumple se incrementa el contador de mesas_completas
                 mesas_completas +=1
         
         jurados.append(jurados_salon)
-        votantes.append(votantes_salon)
+        votantes.append(votantes_salon)# agrega los datos a las listas generales
         asistencias.append(asistencias_salon)
 #esta parte crea el grafico de barras 
     x=range(len(salones))#crea una secuensia de numeros hasta a cantidad de salones que el ususario puso
@@ -245,6 +245,36 @@ def generarGraficos():
     plt.pie([total_asistencias, no_asistieron], labels=["Asistieron", "No asistieron"], autopct='%1.1f%%')#dibuja el diagrama igual que en anterior los que cambia es que este es con los que asistieron 
     plt.title("Asistencia de votantes")#el titulo del diagrama
     plt.show()#muestra el diagrama
+#esta funcion sirve para ver los resultados desde un archivo csv
+def cargarResultados():
+    try:
+        with open("resultados.csv", newline="", encoding="utf-8") as archivo:# abre el archivo y usa utf-8 para que los asentos se lean bien
+            lector = csv.DictReader(archivo)#crea un lector que interpreta cada fila como un diccionario
+            resultados = {f"res{i}": {"Sí": 0, "No": 0} for i in range(1, 10)} #crea un diccionario con 9 preguntas cada una con un contador de si y no
+
+            for fila in lector:# recorre cada fila 
+                for i in range(1, 10):# recorre las preguntas de respusesta1(res) a respuesta9(res)
+                    respuesta = fila[f"res{i}"].strip().capitalize()#carrigue la escritura por si pone espaciones o se ponen minusculas por ejemplo "si "
+                    if respuesta in ["Sí", "No"]:#verisfica si la respuesta el valida
+                        resultados[f"res{i}"][respuesta] += 1 #suma 1 al contador correspondiente
+
+#genera un grafico de barras horizontales
+        preguntas = [f"Persona{i}" for i in range(1, 10)]#crea una lista con los nombres de las preguntas para mostrarlas como persona 1 persona 2 ...
+        si = [resultados[f"res{i}"]["Sí"] for i in range(1, 10)]#crea una lista con la cantidad de respuestas "Si" por cada una de las preguntas
+        no = [resultados[f"res{i}"]["No"] for i in range(1, 10)]#lo mismo con esta solo que con el "No"
+
+        plt.figure(figsize=(10, 6))#crea un nuevo grafico
+        plt.barh(preguntas, si, label="Sí", color="green")#crea las barra y la hace con color verde para la respuesta si
+        plt.barh(preguntas, no, left=si, label="No", color="red")# y para estas las crea con el color rojo
+        plt.xlabel("Cantidad de respuestas")# es una etiqueta para el eje x
+        plt.title("Resultados de votación por pregunta")#es un titulo para el grafico
+        plt.legend()#ayuda a identificar los diferentes elementos de la linea
+        plt.tight_layout()#ajusta el grafico para que no se corte el texto
+        plt.show()#muestra el grafico
+
+    except FileNotFoundError:
+        messagebox.showerror("Error", "El archivo resultados.csv no fue encontrado.")
+
 
 ventana = t.Tk()  # crea la ventana principal
 ventana.title("centro de votacion")
@@ -269,7 +299,7 @@ boton_cargar = t.Button(ventana, text="cargar estructura", command=cargarEstruct
 boton_cargar.pack() #carga el archivo y si no existe manda un error
 
 boton_cargar_votantes=t.Button(ventana, text="cargar votantes", command=cargarvotantescsv)
-boton_cargar_votantes.pack()
+boton_cargar_votantes.pack() #carga un archivo csv que contenga los votantes
 
 botonAsistencia=t.Button(ventana, text="registrar asistencia", command=rigistrarAsistencia)
 botonAsistencia.pack()
@@ -279,6 +309,9 @@ botondelresumenestadistico.pack()
 
 botonGraficos=t.Button(ventana, text="generar graficos", command=generarGraficos)
 botonGraficos.pack()
+
+boton_resultados = t.Button(ventana, text="Cargar resultados", command=cargarResultados)
+boton_resultados.pack()
 
 frame_estructura = t.Frame(ventana)
 frame_estructura.pack(pady=10)  # crea un frame o marco en el que se colocan los botones de los salones, mesas y jurados
